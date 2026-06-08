@@ -1,9 +1,21 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { runMigrations } from './database/run-migrations';
+
+function shouldAutoMigrate(): boolean {
+  if (process.env.AUTO_MIGRATE === 'false') return false;
+  if (process.env.AUTO_MIGRATE === 'true') return true;
+  return process.env.NODE_ENV === 'production';
+}
 
 async function bootstrap() {
+  if (shouldAutoMigrate()) {
+    await runMigrations();
+  }
+
   const app = await NestFactory.create(AppModule);
 
   const corsOrigins = [

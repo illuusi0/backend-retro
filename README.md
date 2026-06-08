@@ -36,8 +36,22 @@ npm run start:dev
 | `PORT` | Порт HTTP API | `3001` |
 | `HOST` | Интерфейс прослушивания (`0.0.0.0` — доступ из сети) | `0.0.0.0` |
 | `FRONTEND_URL` | URL фронтенда для CORS и WebSocket | `https://retro.example.com` |
+| `AUTO_MIGRATE` | Автомиграции при старте (`true` / `false`) | см. ниже |
+| `NODE_ENV` | Окружение (`production` включает автомиграции) | `production` |
 
 > `FRONTEND_URL` должен совпадать с адресом, с которого открывают приложение (включая порт).
+
+### Автоматические миграции
+
+При `npm run start:prod` миграции применяются **автоматически** перед запуском API, если:
+
+- `NODE_ENV=production` (рекомендуется для PM2/systemd), **или**
+- явно задано `AUTO_MIGRATE=true`
+
+Отключить: `AUTO_MIGRATE=false`
+
+В dev-режиме (`npm run start:dev`) автомиграции **выключены** по умолчанию.  
+Ручной запуск по-прежнему доступен: `npm run migration:run`.
 
 ## Деплой (production)
 
@@ -59,14 +73,14 @@ npm ci
 cp .env.example .env
 # заполните production-значения в .env
 
-npm run migration:run
 npm run build
 ```
 
 ### 3. Запуск
 
 ```bash
-npm run start:prod
+# NODE_ENV=production включает автомиграции при старте
+NODE_ENV=production npm run start:prod
 ```
 
 Приложение слушает `HOST:PORT` (по умолчанию `0.0.0.0:3001`).
@@ -94,6 +108,7 @@ Type=simple
 User=www-data
 WorkingDirectory=/var/www/retro-kanban/backend
 Environment=NODE_ENV=production
+Environment=AUTO_MIGRATE=true
 ExecStart=/usr/bin/node dist/main.js
 Restart=on-failure
 
@@ -159,9 +174,8 @@ sudo ufw allow 3001/tcp
 ```bash
 git pull
 npm ci
-npm run migration:run
 npm run build
-pm2 restart retro-api   # или systemctl restart retro-api
+pm2 restart retro-api   # миграции применятся при старте (NODE_ENV=production)
 ```
 
 ## Проверка после деплоя
